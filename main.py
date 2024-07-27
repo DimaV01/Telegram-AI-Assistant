@@ -1,4 +1,4 @@
-import json, os, asyncio, sys, g4f, threading
+import json, os, asyncio, sys, g4f, threading, nest_asyncio, curl_cffi
 import tkinter as tk
 from tkinter import ttk
 from telethon import TelegramClient, events, sync
