@@ -20,7 +20,7 @@ def save_data():
         "api_id": api_id_entry.get(),
         "api_hash": api_hash_entry.get(),
         "phone": phone_entry.get(),
-        "target_usernames": target_usernames_entry.get("1.0", tk.END).strip().split(','),
+        "target_usernames": target_usernames_entry.get("1.0", tk.END).strip().split('\n'),
         "code": code_entry.get(),
         "model": model_combobox.get(),
         "system_message": system_message_entry.get("1.0", tk.END).strip(),
@@ -81,7 +81,7 @@ def toggle_bot():
     api_hash = api_hash_entry.get()
     phone = phone_entry.get()
     code = code_entry.get()
-    target_usernames = target_usernames_entry.get("1.0", tk.END).strip().split(',')
+    target_usernames = target_usernames_entry.get("1.0", tk.END).strip().split('\n')
     model = model_combobox.get()
     system_message = system_message_entry.get("1.0", tk.END).strip()
 
@@ -104,11 +104,9 @@ async def start_bot(model, system_message):
         global client
         if not client.is_connected():
             await client.connect()
-        
-        # Словарь для хранения истории чата для каждого пользователя
+            
         chat_histories = {}
-        
-        target_usernames = target_usernames_entry.get("1.0", tk.END).strip().split(',')
+        target_usernames = target_usernames_entry.get("1.0", tk.END).strip().split('\n')
 
         if not hasattr(client, 'handler_registered'):
             @client.on(events.NewMessage(from_users=target_usernames))
@@ -123,7 +121,9 @@ async def start_bot(model, system_message):
                 # Обработка команды /new
                 if user_message.strip() == "/new":
                     chat_histories[user_id] = [{"role": "system", "content": system_message}]
-                    await client.send_message(user_id, "История чата сброшена.")
+                    if not hasattr(event, 'handled') or not event.handled:
+                        event.handled = True
+                        await client.send_message(user_id, "История чата сброшена.")
                     return
 
                 try:
@@ -145,12 +145,13 @@ async def start_bot(model, system_message):
                         chat_histories[user_id].append({"role": "assistant", "content": bot_reply})
                         
                         if reply_with_signature.get():
-                            await client.send_message(user_id, f'(Это сообщение сгенерировано {model})\n\n{bot_reply}\n\n (Отправьте "/new" для создания нового диалога.)')
+                            await client.send_message(user_id, f'(Это сообщение сгенерировано {model})\n\n{bot_reply}\n\n (Отправьте "/new" для создания нового диалога.)', reply_to=event.message.id)
                         else:
-                            await client.send_message(user_id, bot_reply)
+                            await client.send_message(user_id, bot_reply, reply_to=event.message.id)
                             
                 except Exception as e:
-                    await client.send_message(user_id, f"Извините, в данный момент помощник не работает: {e}")
+                    await client.send_message(user_id, f"Извините, в данный момент помощник не работает: {e}", reply_to=event.message.id)
+                
 
             client.add_event_handler(handle_new_message, events.NewMessage(from_users=target_usernames))
             client.handler_registered = True
@@ -227,10 +228,10 @@ code_entry.insert(0, data.get("code", ""))
 verify_code_button = tk.Button(root, text="Verify Code", command=verify_code)
 verify_code_button.grid(row=4, column=2, padx=10, pady=5)
 
-tk.Label(root, text="Target Usernames (comma separated):").grid(row=6, column=0, padx=10, pady=5)
+tk.Label(root, text="Target Usernames (new line each):").grid(row=6, column=0, padx=10, pady=5)
 target_usernames_entry = tk.Text(root, height=5, width=30)
 target_usernames_entry.grid(row=6, column=1, padx=10, pady=5)
-target_usernames_entry.insert(tk.END, ",".join(data.get("target_usernames", [])))
+target_usernames_entry.insert(tk.END, "\n".join(data.get("target_usernames", [])))
 
 tk.Label(root, text="Model:").grid(row=7, column=0, padx=10, pady=5)
 model_combobox = ttk.Combobox(root, values=[
