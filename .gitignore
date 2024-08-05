@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 TGAI.session
 data.json
+main.exe
