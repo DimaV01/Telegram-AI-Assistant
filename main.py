@@ -238,6 +238,7 @@ model_combobox = ttk.Combobox(root, values=[
     'gpt_4_32k_0613',
     'gpt_4_turbo',
     'gpt_4o',
+    'gpt_4o_mini',
     'claude_3_haiku',
     'claude_3_opus',
     'claude_3_sonnet',
